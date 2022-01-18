@@ -12,6 +12,8 @@ type Server struct {
 	IPVersion string
 	IP        string
 	Port      int
+	//当前的server添加一个router service注册的链接对应的处理业务
+	Router ziface.IRouter
 }
 
 func NewServer(name string) ziface.IServer {
@@ -20,6 +22,7 @@ func NewServer(name string) ziface.IServer {
 		IPVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      8999,
+		Router:    nil,
 	}
 	return s
 }
@@ -42,6 +45,7 @@ func (s *Server) Start() {
 		}
 		logrus.Infof("start Zinx server success, %s listening successful ", s.Name)
 
+		var cid uint32
 		//阻塞的等待客户链接，处理客户端链接的业务
 		for {
 			conn, err := listener.AcceptTCP()
@@ -49,22 +53,12 @@ func (s *Server) Start() {
 				logrus.Errorf("Accept Error: %s", err)
 				continue
 			}
-			//与客户端建立链接 做一些业务 回显
-			go func() {
-				for {
-					buf := make([]byte, 512)
-					cnt, err := conn.Read(buf)
-					if err != nil {
-						logrus.Errorf("rece buf err: %s", err)
-						continue
-					}
-					//回显
-					if _, err := conn.Write(buf[:cnt]); err != nil {
-						logrus.Errorf("write back buf err: %s", err)
-						continue
-					}
-				}
-			}()
+
+			//将处理新连接的业务和conn进行binding 得到需要的模块
+			dealConn := NewConnection(conn, cid, s.Router)
+			cid++
+			//启动当前的链接业务处理
+			go dealConn.Start()
 		}
 	}()
 
@@ -75,4 +69,8 @@ func (s *Server) Server() {
 }
 func (s *Server) Stop() {
 
+}
+func (s *Server) AddRouter(router ziface.IRouter) {
+	s.Router = router
+	logrus.Info("Add Router Success")
 }
