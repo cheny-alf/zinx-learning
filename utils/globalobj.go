@@ -39,7 +39,7 @@ func init() {
 		MaxConn:        1000,
 		MaxPackageSize: 4096,
 	}
-	GlobalObject.Reload()
+	//GlobalObject.Reload()
 }
 
 //加载zinx文件的方法
