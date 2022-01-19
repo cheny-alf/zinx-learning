@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"net"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -18,17 +19,17 @@ type Server struct {
 
 func NewServer(name string) ziface.IServer {
 	s := &Server{
-		Name:      name,
+		Name:      utils.GlobalObject.Name,
 		IPVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      8999,
+		IP:        utils.GlobalObject.Host,
+		Port:      utils.GlobalObject.TcpPort,
 		Router:    nil,
 	}
 	return s
 }
 
 func (s *Server) Start() {
-	logrus.Infof("[Start] Server Listener at IP :%s, Port %d, is starting\n", s.IP, s.Port)
+	logrus.Infof("[Zinx] Server Listener at IP :%s, Port %d, is starting", utils.GlobalObject.Host, utils.GlobalObject.TcpPort)
 
 	go func() {
 		//获取tcp的addr
