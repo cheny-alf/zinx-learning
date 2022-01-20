@@ -8,5 +8,5 @@ type IServer interface {
 	//终止服务
 	Stop()
 	//路由功能 给当前的服务注册一个路由方法 供客户端链接使用
-	AddRouter(router IRouter)
+	AddRouter(msgID uint32, router IRouter)
 }
