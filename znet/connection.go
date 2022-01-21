@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net"
+	"sync"
 	"zinx/utils"
 	"zinx/ziface"
 )
@@ -25,6 +26,10 @@ type Connection struct {
 	msgChan chan []byte
 	//消息的管理msgID 和对应的处理业务api关系
 	MsgHandle ziface.IMsgHandler
+	//链接属性集合
+	property map[string]interface{}
+	//保护连接属性的锁
+	propertyLock sync.RWMutex
 }
 
 //初始化链接模块的方法
@@ -37,6 +42,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, hand
 		MsgHandle: handler,
 		msgChan:   make(chan []byte),
 		ExitChan:  make(chan bool, 1),
+		property:  make(map[string]interface{}),
 	}
 
 	//将conn加入connMgr中
@@ -185,4 +191,31 @@ func (c *Connection) StartWriter() {
 			return
 		}
 	}
+}
+
+//设置链接属性
+func (c *Connection) SetProperty(key string, value interface{}) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	c.property[key] = value
+}
+
+//获取链接属性
+func (c *Connection) GetProperty(key string) (interface{}, error) {
+	c.propertyLock.RLock()
+	defer c.propertyLock.RUnlock()
+
+	if value, ok := c.property[key]; ok {
+		return value, nil
+	} else {
+		return nil, errors.New("no property found")
+	}
+}
+
+//移除链接属性
+func (c *Connection) RemoveProperty(key string) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+	delete(c.property, key)
 }
